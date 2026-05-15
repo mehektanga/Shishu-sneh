@@ -1,25 +1,44 @@
 {
   "project_info": {
-    "project_number": "123456789012",
-    "project_id": "shishu-sneh-healthcare",
-    "storage_bucket": "shishu-sneh-healthcare.appspot.com"
+    "project_number": "563500063927",
+    "project_id": "shishusneh-73964",
+    "storage_bucket": "shishusneh-73964.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789012:android:abcdef1234567890",
+        "mobilesdk_app_id": "1:563500063927:android:45ef3b17269948cf9b4132",
         "android_client_info": {
           "package_name": "com.example.shishu_sneh_healthcare"
         }
       },
+      "oauth_client": [
+        {
+          "client_id": "563500063927-u0lvul45hgn2sbbc1v733650o4nutrah.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.shishu_sneh_healthcare",
+            "certificate_hash": "ef93cd128cab3db28965326dfff65acbf537be12"
+          }
+        },
+        {
+          "client_id": "563500063927-altuvicatbvlv2obcjesv8i1eqg7nthg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "dummy_api_key"
+          "current_key": "AIzaSyDFQVZeWTzh5RHQD8_C7wlqtoFe3n5wydI"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "563500063927-altuvicatbvlv2obcjesv8i1eqg7nthg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
