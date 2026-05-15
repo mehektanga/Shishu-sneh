@@ -25,4 +25,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "Shishu-Sneh-Healthcare"
 include(":app")
- 

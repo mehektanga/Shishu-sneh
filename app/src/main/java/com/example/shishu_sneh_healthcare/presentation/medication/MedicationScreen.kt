@@ -28,6 +28,7 @@ fun MedicationScreen(
     viewModel: MedicationViewModel = hiltViewModel()
 ) {
     val medications by viewModel.medications.collectAsState()
+    var showAddDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = babyId) {
         viewModel.loadMedications(babyId)
@@ -45,7 +46,11 @@ fun MedicationScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { /* Add Medication */ }) {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Add")
             }
         }
@@ -76,7 +81,81 @@ fun MedicationScreen(
                 }
             }
         }
+
+        if (showAddDialog) {
+            AddMedicationDialog(
+                onDismiss = { showAddDialog = false },
+                onSave = { name, dose, timing, notes ->
+                    viewModel.addMedication(
+                        MedicationEntity(
+                            babyId = babyId,
+                            name = name,
+                            dose = dose,
+                            frequency = timing,
+                            startDate = System.currentTimeMillis(),
+                            endDate = null,
+                            notes = notes
+                        )
+                    )
+                    showAddDialog = false
+                }
+            )
+        }
     }
+}
+
+@Composable
+fun AddMedicationDialog(onDismiss: () -> Unit, onSave: (String, String, String, String) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var dose by remember { mutableStateOf("") }
+    var timing by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Medication", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Medicine Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = dose,
+                    onValueChange = { dose = it },
+                    label = { Text("Dosage (e.g. 5ml)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = timing,
+                    onValueChange = { timing = it },
+                    label = { Text("Timing (e.g. Twice daily)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(name, dose, timing, notes) },
+                enabled = name.isNotEmpty() && dose.isNotEmpty()
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
@@ -103,6 +182,9 @@ fun MedicationItem(medication: MedicationEntity) {
             Column {
                 Text(text = medication.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Text(text = "${medication.dose} • ${medication.frequency}", fontSize = 14.sp, color = Color.Gray)
+                if (!medication.notes.isNullOrEmpty()) {
+                    Text(text = medication.notes, fontSize = 12.sp, color = Color.Gray)
+                }
             }
         }
     }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -66,7 +67,14 @@ fun VaccinationScreen(
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
                 items(vaccines) { vaccine ->
-                    VaccineCard(vaccine = vaccine)
+                    VaccineCard(
+                        vaccine = vaccine,
+                        onStatusToggle = { isDone ->
+                            viewModel.updateVaccineStatus(
+                                vaccine.copy(status = if (isDone) "Done" else "Pending")
+                            )
+                        }
+                    )
                 }
                 
                 if (vaccines.isEmpty()) {
@@ -80,7 +88,7 @@ fun VaccinationScreen(
 }
 
 @Composable
-fun VaccineCard(vaccine: VaccineEntity) {
+fun VaccineCard(vaccine: VaccineEntity, onStatusToggle: (Boolean) -> Unit) {
     val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
     val dueDate = dateFormat.format(Date(vaccine.scheduledDate))
 
@@ -94,35 +102,34 @@ fun VaccineCard(vaccine: VaccineEntity) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier.padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                color = statusColor.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.size(56.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = if (vaccine.status == "Done") Icons.Default.CheckCircle else Icons.Default.CheckCircle, // Placeholder for specific vaccine icon
-                        contentDescription = null,
-                        tint = statusColor,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
+            IconButton(onClick = { onStatusToggle(vaccine.status != "Done") }) {
+                Icon(
+                    imageVector = if (vaccine.status == "Done") Icons.Default.CheckCircle else Icons.Outlined.Circle,
+                    contentDescription = "Toggle Status",
+                    tint = if (vaccine.status == "Done") Color(0xFF4CAF50) else Color.Gray,
+                    modifier = Modifier.size(32.dp)
+                )
             }
-            Spacer(modifier = Modifier.width(16.dp))
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = vaccine.name, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                Text(
+                    text = vaccine.name, 
+                    fontWeight = FontWeight.ExtraBold, 
+                    fontSize = 18.sp,
+                    color = if (vaccine.status == "Done") Color.Gray else Color.Unspecified
+                )
                 Text(text = vaccine.disease, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "Due: $dueDate", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                }
+                Text(text = "Due: $dueDate", fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
             StatusChip(status = vaccine.status, color = statusColor)
         }

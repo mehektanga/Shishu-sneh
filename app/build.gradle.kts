@@ -3,8 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
-    // alias(libs.plugins.google.services)
-    // alias(libs.plugins.firebase.crashlytics)
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.firebase.crashlytics)
 }
 
 android {
@@ -53,7 +53,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

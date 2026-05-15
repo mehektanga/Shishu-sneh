@@ -2,15 +2,20 @@ package com.example.shishu_sneh_healthcare.presentation.growth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -21,6 +26,8 @@ import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.example.shishu_sneh_healthcare.data.local.entity.GrowthEntryEntity
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,21 +37,10 @@ fun GrowthChartScreen(
     viewModel: GrowthViewModel = hiltViewModel()
 ) {
     val growthEntries by viewModel.growthEntries.collectAsState()
+    var showAddDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = babyId) {
         viewModel.loadGrowthEntries(babyId)
-    }
-
-    // Mock data for professional preview if empty
-    val displayedEntries = if (growthEntries.isEmpty()) {
-        listOf(
-            GrowthEntryEntity(0, babyId, 0, 3.2, 50.0, 34.0, "Birth"),
-            GrowthEntryEntity(0, babyId, 1, 4.1, 54.0, 36.0, "Month 1"),
-            GrowthEntryEntity(0, babyId, 2, 5.0, 58.0, 38.0, "Month 2"),
-            GrowthEntryEntity(0, babyId, 3, 5.8, 61.0, 39.5, "Month 3")
-        )
-    } else {
-        growthEntries
     }
 
     Scaffold(
@@ -58,6 +54,15 @@ fun GrowthChartScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Growth Entry")
+            }
         }
     ) { padding ->
         Column(
@@ -66,60 +71,146 @@ fun GrowthChartScreen(
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
                 .padding(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(350.dp)
-                    .padding(vertical = 8.dp),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Weight Progress (kg)",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    GrowthLineChart(entries = displayedEntries.mapIndexed { index, entry ->
-                        Entry(index.toFloat(), entry.weight.toFloat())
-                    })
+            if (growthEntries.isNotEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(350.dp)
+                        .padding(vertical = 8.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Weight Progress (kg)",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        GrowthLineChart(entries = growthEntries.mapIndexed { index, entry ->
+                            Entry(index.toFloat(), entry.weight.toFloat())
+                        })
+                    }
+                }
+            } else {
+                Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                    Text("No growth data yet. Tap + to add.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Key Statistics",
+                text = "Recent History",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard("Current", "${displayedEntries.lastOrNull()?.weight ?: 0} kg", Modifier.weight(1f))
-                StatCard("Gain", "+0.8 kg", Modifier.weight(1f))
+            growthEntries.reversed().forEach { entry ->
+                GrowthEntryItem(entry)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+
+        if (showAddDialog) {
+            AddGrowthDialog(
+                onDismiss = { showAddDialog = false },
+                onSave = { weight, height, head ->
+                    viewModel.addGrowthEntry(
+                        GrowthEntryEntity(
+                            babyId = babyId,
+                            date = System.currentTimeMillis(),
+                            weight = weight.toDoubleOrNull() ?: 0.0,
+                            height = height.toDoubleOrNull() ?: 0.0,
+                            headCirc = head.toDoubleOrNull() ?: 0.0,
+                            notes = ""
+                        )
+                    )
+                    showAddDialog = false
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun GrowthEntryItem(entry: GrowthEntryEntity) {
+    val dateStr = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(entry.date))
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(text = dateStr, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(text = "Weight: ${entry.weight} kg | Height: ${entry.height} cm", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (entry.headCirc > 0) {
+                Text(text = "HC: ${entry.headCirc} cm", fontSize = 12.sp, fontWeight = FontWeight.Medium)
             }
         }
     }
 }
 
 @Composable
-fun StatCard(label: String, value: String, modifier: Modifier) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f))
-    ) {
-        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSecondaryContainer)
-            Text(text = value, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+fun AddGrowthDialog(onDismiss: () -> Unit, onSave: (String, String, String) -> Unit) {
+    var weight by remember { mutableStateOf("") }
+    var height by remember { mutableStateOf("") }
+    var head by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Log Baby Growth", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = weight,
+                    onValueChange = { weight = it },
+                    label = { Text("Weight (kg)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = height,
+                    onValueChange = { height = it },
+                    label = { Text("Height (cm)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = head,
+                    onValueChange = { head = it },
+                    label = { Text("Head Circumference (cm)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(weight, height, head) },
+                enabled = weight.isNotEmpty() && height.isNotEmpty()
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
         }
-    }
+    )
 }
 
 @Composable
@@ -138,7 +229,6 @@ fun GrowthLineChart(entries: List<Entry>) {
                     position = XAxis.XAxisPosition.BOTTOM
                     setDrawGridLines(false)
                     granularity = 1f
-                    labelCount = entries.size
                 }
                 
                 axisLeft.apply {

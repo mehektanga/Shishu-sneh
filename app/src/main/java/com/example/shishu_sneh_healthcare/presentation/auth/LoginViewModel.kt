@@ -16,14 +16,11 @@ class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    private val _phoneNumber = MutableStateFlow("")
-    val phoneNumber: StateFlow<String> = _phoneNumber.asStateFlow()
+    private val _email = MutableStateFlow("")
+    val email: StateFlow<String> = _email.asStateFlow()
 
-    private val _otp = MutableStateFlow("")
-    val otp: StateFlow<String> = _otp.asStateFlow()
-
-    private val _isOtpSent = MutableStateFlow(false)
-    val isOtpSent: StateFlow<Boolean> = _isOtpSent.asStateFlow()
+    private val _password = MutableStateFlow("")
+    val password: StateFlow<String> = _password.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -31,60 +28,32 @@ class LoginViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    private var verificationId: String? = null
-
-    fun onPhoneNumberChange(newValue: String) {
-        _phoneNumber.value = newValue
+    fun onEmailChange(newValue: String) {
+        _email.value = newValue
     }
 
-    fun onOtpChange(newValue: String) {
-        _otp.value = newValue
+    fun onPasswordChange(newValue: String) {
+        _password.value = newValue
     }
 
-    fun sendOtp() {
-        if (_phoneNumber.value.length < 10) {
-            _error.value = "Enter a valid phone number"
+    fun loginUser(onSuccess: (Boolean) -> Unit) {
+        if (_email.value.isBlank() || _password.value.isBlank()) {
+            _error.value = "Email and password cannot be empty"
             return
         }
 
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
-            authRepository.sendOtp(
-                phoneNumber = _phoneNumber.value,
-                onCodeSent = { id ->
-                    verificationId = id
-                    _isOtpSent.value = true
-                    _isLoading.value = false
-                },
-                onVerificationFailed = { e ->
-                    _error.value = e.message ?: "Failed to send OTP"
-                    _isLoading.value = false
-                }
-            )
-        }
-    }
-
-    fun verifyOtp(onSuccess: () -> Unit) {
-        val id = verificationId ?: return
-        
-        viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            authRepository.verifyOtp(id, _otp.value).collectLatest { result ->
+            authRepository.loginWithEmail(_email.value, _password.value).collectLatest { result ->
                 if (result.isSuccess) {
-                    onSuccess()
+                    val profileResult = authRepository.hasBabyProfile()
+                    onSuccess(profileResult.getOrDefault(false))
                 } else {
-                    _error.value = result.exceptionOrNull()?.message ?: "Invalid OTP"
+                    _error.value = result.exceptionOrNull()?.message ?: "Login failed"
                 }
                 _isLoading.value = false
             }
         }
-    }
-
-    fun resetOtpState() {
-        _isOtpSent.value = false
-        _otp.value = ""
-        _error.value = null
     }
 }

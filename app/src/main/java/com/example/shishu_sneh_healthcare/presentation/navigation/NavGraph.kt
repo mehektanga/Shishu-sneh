@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.shishu_sneh_healthcare.presentation.auth.LoginScreen
+import com.example.shishu_sneh_healthcare.presentation.auth.RegisterScreen
 import com.example.shishu_sneh_healthcare.presentation.dashboard.DashboardScreen
 import com.example.shishu_sneh_healthcare.presentation.feeding.FeedingScreen
 import com.example.shishu_sneh_healthcare.presentation.growth.GrowthChartScreen
@@ -43,6 +44,9 @@ fun SetupNavGraph(
         }
         composable(route = Screen.Login.route) {
             LoginScreen(navController = navController)
+        }
+        composable(route = Screen.Register.route) {
+            RegisterScreen(navController = navController)
         }
         composable(route = Screen.ProfileSetup.route) {
             ProfileSetupScreen(navController = navController)

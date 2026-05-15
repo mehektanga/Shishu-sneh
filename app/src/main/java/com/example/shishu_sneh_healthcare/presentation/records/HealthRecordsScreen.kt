@@ -29,6 +29,7 @@ fun HealthRecordsScreen(
     viewModel: HealthRecordsViewModel = hiltViewModel()
 ) {
     val records by viewModel.records.collectAsState()
+    var showAddDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = babyId) {
         viewModel.loadRecords(babyId)
@@ -46,7 +47,11 @@ fun HealthRecordsScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { /* Open add record dialog */ }) {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Record")
             }
         }
@@ -77,7 +82,81 @@ fun HealthRecordsScreen(
                 }
             }
         }
+
+        if (showAddDialog) {
+            AddHealthRecordDialog(
+                onDismiss = { showAddDialog = false },
+                onSave = { type, doctor, clinic, notes ->
+                    viewModel.addRecord(
+                        HealthRecordEntity(
+                            babyId = babyId,
+                            date = System.currentTimeMillis(),
+                            type = type,
+                            doctorName = doctor,
+                            clinic = clinic,
+                            notes = notes,
+                            attachmentUri = null
+                        )
+                    )
+                    showAddDialog = false
+                }
+            )
+        }
     }
+}
+
+@Composable
+fun AddHealthRecordDialog(onDismiss: () -> Unit, onSave: (String, String, String, String) -> Unit) {
+    var type by remember { mutableStateOf("") }
+    var doctor by remember { mutableStateOf("") }
+    var clinic by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Health Record", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = type,
+                    onValueChange = { type = it },
+                    label = { Text("Record Type (e.g. Doctor Visit)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = doctor,
+                    onValueChange = { doctor = it },
+                    label = { Text("Doctor Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = clinic,
+                    onValueChange = { clinic = it },
+                    label = { Text("Clinic / Hospital") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes / Prescription") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(type, doctor, clinic, notes) },
+                enabled = type.isNotEmpty()
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
@@ -87,14 +166,15 @@ fun HealthRecordItem(record: HealthRecordEntity) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                 shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.size(50.dp)
             ) {
@@ -111,7 +191,13 @@ fun HealthRecordItem(record: HealthRecordEntity) {
                 Text(text = record.type, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Text(text = dateString, fontSize = 14.sp, color = Color.Gray)
                 if (!record.doctorName.isNullOrEmpty()) {
-                    Text(text = "Dr. ${record.doctorName}", fontSize = 14.sp)
+                    Text(text = "Dr. ${record.doctorName}", fontSize = 14.sp, color = Color.Gray)
+                }
+                if (!record.clinic.isNullOrEmpty()) {
+                    Text(text = record.clinic!!, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                }
+                if (!record.notes.isNullOrEmpty()) {
+                    Text(text = record.notes!!, fontSize = 13.sp, color = Color.Gray)
                 }
             }
         }

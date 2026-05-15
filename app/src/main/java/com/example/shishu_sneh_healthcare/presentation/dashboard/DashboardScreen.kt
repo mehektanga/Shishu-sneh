@@ -15,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -37,9 +36,13 @@ fun DashboardScreen(
     val selectedBaby by viewModel.selectedBaby.collectAsState()
     val babies by viewModel.babies.collectAsState()
     val currentTab by viewModel.currentTab.collectAsState()
+    
+    val upcomingVaccines by viewModel.upcomingVaccines.collectAsState()
+    val activeMedications by viewModel.activeMedications.collectAsState()
+    val milestoneProgress by viewModel.milestoneProgress.collectAsState()
 
     LaunchedEffect(Unit) {
-        viewModel.loadBabies("dummy_user_id")
+        viewModel.loadBabies()
     }
 
     Scaffold(
@@ -69,204 +72,124 @@ fun DashboardScreen(
 
             if (babies.isNotEmpty()) {
                 item {
-                    SummaryCardsSection(navController, babyId)
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Today's Summary",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            item {
+                                SummaryCard(
+                                    "Next Vaccine", 
+                                    upcomingVaccines.firstOrNull()?.name ?: "None", 
+                                    Icons.Default.Vaccines, 
+                                    MaterialTheme.colorScheme.primary
+                                ) {
+                                    navController.navigate(Screen.Vaccination.route + "/$babyId")
+                                }
+                            }
+                            item {
+                                SummaryCard(
+                                    "Growth", 
+                                    "Tracked", 
+                                    Icons.Default.Timeline, 
+                                    MaterialTheme.colorScheme.secondary
+                                ) {
+                                    navController.navigate(Screen.GrowthChart.route + "/$babyId")
+                                }
+                            }
+                            item {
+                                SummaryCard(
+                                    "Milestones", 
+                                    "${(milestoneProgress * 100).toInt()}%", 
+                                    Icons.Default.Star, 
+                                    MaterialTheme.colorScheme.tertiary
+                                ) {
+                                    navController.navigate(Screen.Milestone.route + "/$babyId")
+                                }
+                            }
+                        }
+                    }
                 }
 
-                item {
-                    QuickActionsGrid(navController, babyId)
+                item { QuickActionsGrid(navController, babyId) }
+
+                if (activeMedications.isNotEmpty()) {
+                    item {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(text = "Medicine Reminders", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            activeMedications.forEach { med ->
+                                MedicationSmallItem(med) {
+                                    navController.navigate(Screen.Medications.route + "/$babyId")
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+                    }
                 }
 
-                item {
-                    MedicineAlertSection(navController, babyId)
-                }
-
-                item {
-                    UpcomingAlertsSection()
-                }
-
-                item {
-                    AIInsightsCard()
-                }
+                item { AIInsightsCard() }
             } else {
                 item {
-                    EmptyDashboardState {
-                        navController.navigate(Screen.ProfileSetup.route)
-                    }
+                    EmptyDashboardState { navController.navigate(Screen.ProfileSetup.route) }
                 }
             }
             
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+            item { Spacer(modifier = Modifier.height(24.dp)) }
         }
     }
 }
 
 @Composable
-fun EmptyDashboardState(onAddBabyClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+fun MedicationSmallItem(med: com.example.shishu_sneh_healthcare.data.local.entity.MedicationEntity, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f))
     ) {
-        Text(text = "👶", fontSize = 64.sp)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "No babies added yet",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = "Add your baby's details to get started with health tracking and insights.",
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(onClick = onAddBabyClick) {
-            Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Add Baby Profile")
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Medication, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(text = med.name, fontWeight = FontWeight.Bold)
+                Text(text = med.dose, fontSize = 12.sp)
+            }
         }
     }
 }
-
 
 @Composable
 fun DashboardHeader(babyName: String, onProfileClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(230.dp)
+            .height(160.dp)
             .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(PinkHeader, LavenderHeader)
-                ),
+                brush = Brush.verticalGradient(colors = listOf(PinkHeader, LavenderHeader)),
                 shape = RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp)
             )
             .padding(24.dp)
     ) {
-        Column {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        text = "Hello,",
-                        color = Color.White.copy(alpha = 0.8f),
-                        fontSize = 16.sp
-                    )
-                    Text(
-                        text = "$babyName's Guardian 🍼",
-                        color = Color.White,
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                }
-                Surface(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .clip(CircleShape)
-                        .clickable { onProfileClick() },
-                    color = Color.White.copy(alpha = 0.2f)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(text = "👩", fontSize = 32.sp)
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.15f))
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.Celebration, contentDescription = null, tint = Color.White)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "Ananya turned 3 months today! 🎉",
-                        color = Color.White,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun MedicineAlertSection(navController: NavHostController, babyId: Long) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(
-            text = "Medicine Reminders",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Card(
-            modifier = Modifier.fillMaxWidth().clickable { navController.navigate(Screen.Medications.route + "/$babyId") },
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Medication, contentDescription = null, tint = Color.White)
-                    }
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Vitamin D3 Drops", fontWeight = FontWeight.Bold)
-                    Text(text = "Next dose at 8:00 PM", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                IconButton(onClick = { /* Mark as taken */ }) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                }
+            Column {
+                Text(text = "Hello,", color = Color.White.copy(alpha = 0.8f), fontSize = 16.sp)
+                Text(text = "$babyName's Guardian 🍼", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold)
             }
-        }
-    }
-}
-
-@Composable
-fun SummaryCardsSection(navController: NavHostController, babyId: Long) {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(
-            text = "Today's Summary",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(horizontal = 4.dp)
-        ) {
-            item {
-                SummaryCard("Next Vaccine", "5 Days", Icons.Default.Vaccines, MaterialTheme.colorScheme.primary) {
-                    navController.navigate(Screen.Vaccination.route + "/$babyId")
-                }
-            }
-            item {
-                SummaryCard("Growth", "Healthy", Icons.Default.Timeline, MaterialTheme.colorScheme.secondary) {
-                    navController.navigate(Screen.GrowthChart.route + "/$babyId")
-                }
-            }
-            item {
-                SummaryCard("Feeding", "2h ago", Icons.Default.ChildCare, MaterialTheme.colorScheme.tertiary) {
-                    navController.navigate(Screen.Feeding.route + "/$babyId")
+            Surface(
+                modifier = Modifier.size(60.dp).clip(CircleShape).clickable { onProfileClick() },
+                color = Color.White.copy(alpha = 0.2f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(text = "👩", fontSize = 32.sp)
                 }
             }
         }
@@ -282,22 +205,15 @@ fun SummaryCard(title: String, value: String, icon: ImageVector, color: Color, o
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Surface(
-                color = color.copy(alpha = 0.1f),
-                shape = CircleShape,
-                modifier = Modifier.size(36.dp)
-            ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            Surface(color = color.copy(alpha = 0.1f), shape = CircleShape, modifier = Modifier.size(36.dp)) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
                 }
             }
             Column {
                 Text(text = title, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(text = value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = color)
+                Text(text = value, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1)
             }
         }
     }
@@ -306,18 +222,14 @@ fun SummaryCard(title: String, value: String, icon: ImageVector, color: Color, o
 @Composable
 fun QuickActionsGrid(navController: NavHostController, babyId: Long) {
     Column(modifier = Modifier.padding(16.dp)) {
-        Text(
-            text = "Quick Actions",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
+        Text(text = "Quick Actions", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(12.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            QuickActionButton("Log Growth", Icons.Default.Scale, Modifier.weight(1f), MaterialTheme.colorScheme.primaryContainer) {
-                navController.navigate(Screen.GrowthChart.route + "/$babyId")
+            QuickActionButton("Feeding", Icons.Default.ChildCare, Modifier.weight(1f), MaterialTheme.colorScheme.primaryContainer) {
+                navController.navigate(Screen.Feeding.route + "/$babyId")
             }
-            QuickActionButton("Add Medicine", Icons.Default.AddModerator, Modifier.weight(1f), MaterialTheme.colorScheme.secondaryContainer) {
-                navController.navigate(Screen.Medications.route + "/$babyId")
+            QuickActionButton("Records", Icons.Default.Folder, Modifier.weight(1f), MaterialTheme.colorScheme.secondaryContainer) {
+                navController.navigate(Screen.HealthRecords.route + "/$babyId")
             }
         }
     }
@@ -332,47 +244,14 @@ fun QuickActionButton(label: String, icon: ImageVector, modifier: Modifier, cont
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 2.dp
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                color = containerColor.copy(alpha = 0.2f),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.size(40.dp)
-            ) {
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(color = containerColor.copy(alpha = 0.2f), shape = RoundedCornerShape(12.dp), modifier = Modifier.size(40.dp)) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
                 }
             }
             Spacer(modifier = Modifier.width(12.dp))
             Text(text = label, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-        }
-    }
-}
-
-@Composable
-fun UpcomingAlertsSection() {
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text(
-            text = "Upcoming Events",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f))
-        ) {
-            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    Text(text = "DPT Booster Overdue", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
-                    Text(text = "Scheduled for 2 days ago", fontSize = 12.sp)
-                }
-            }
         }
     }
 }
@@ -391,61 +270,55 @@ fun AIInsightsCard() {
                 Text(text = "AI Health Insight", fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "Babies usually start smiling socially between 6-8 weeks. Keep engaging with your baby to foster development!",
-                fontSize = 15.sp,
-                lineHeight = 22.sp
-            )
+            Text(text = "Social engagement stimulates brain development. Try reading aloud to your baby today!", fontSize = 15.sp)
         }
     }
 }
 
 @Composable
-fun DashboardBottomNavigation(
-    navController: NavHostController,
-    selectedTab: Int,
-    onTabSelected: (Int) -> Unit,
-    babyId: Long
-) {
-    NavigationBar(
-        tonalElevation = 8.dp,
-        containerColor = MaterialTheme.colorScheme.surface
-    ) {
+fun EmptyDashboardState(onAddBabyClick: () -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = "👶", fontSize = 64.sp)
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(text = "No babies added yet", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(onClick = onAddBabyClick) {
+            Icon(Icons.Default.Add, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Add Baby Profile")
+        }
+    }
+}
+
+@Composable
+fun DashboardBottomNavigation(navController: NavHostController, selectedTab: Int, onTabSelected: (Int) -> Unit, babyId: Long) {
+    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = null) },
+            icon = { Icon(Icons.Default.Home, null) },
             label = { Text("Home") },
             selected = selectedTab == 0,
-            onClick = { 
-                onTabSelected(0)
-                navController.navigate(Screen.Dashboard.route) {
-                    popUpTo(Screen.Dashboard.route) { inclusive = true }
-                }
-            }
+            onClick = { onTabSelected(0) }
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Timeline, contentDescription = null) },
+            icon = { Icon(Icons.Default.Timeline, null) },
             label = { Text("Growth") },
             selected = selectedTab == 1,
             onClick = { 
                 onTabSelected(1)
-                if (babyId != -1L) {
-                    navController.navigate(Screen.GrowthChart.route + "/$babyId")
-                }
+                if (babyId != -1L) navController.navigate(Screen.GrowthChart.route + "/$babyId") 
             }
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.History, contentDescription = null) },
+            icon = { Icon(Icons.Default.History, null) },
             label = { Text("Records") },
             selected = selectedTab == 2,
             onClick = { 
                 onTabSelected(2)
-                if (babyId != -1L) {
-                    navController.navigate(Screen.HealthRecords.route + "/$babyId")
-                }
+                if (babyId != -1L) navController.navigate(Screen.HealthRecords.route + "/$babyId")
             }
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+            icon = { Icon(Icons.Default.Settings, null) },
             label = { Text("Settings") },
             selected = selectedTab == 3,
             onClick = { 

@@ -7,7 +7,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -64,12 +63,17 @@ class RegisterViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
-            authRepository.registerWithEmail(_name.value, _email.value, _password.value).collectLatest { result ->
-                if (result.isSuccess) {
-                    onSuccess()
-                } else {
-                    _error.value = result.exceptionOrNull()?.message ?: "Registration failed"
+            try {
+                authRepository.registerWithEmail(_name.value, _email.value, _password.value).collect { result ->
+                    if (result.isSuccess) {
+                        onSuccess()
+                    } else {
+                        _error.value = result.exceptionOrNull()?.message ?: "Registration failed"
+                    }
                 }
+            } catch (e: Exception) {
+                _error.value = e.localizedMessage ?: "An unexpected error occurred"
+            } finally {
                 _isLoading.value = false
             }
         }
