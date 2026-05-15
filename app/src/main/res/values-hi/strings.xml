@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">शिशु-स्नेह</string>
+    <string name="tagline">आपके बच्चे का डिजिटल अभिभावक फरिश्ता</string>
+    <string name="get_started">शुरू करें</string>
+    <string name="login_phone">फोन के साथ लॉगिन करें</string>
+    <string name="send_otp">ओटीपी भेजें</string>
+    <string name="dashboard">डैशबोर्ड</string>
+    <string name="growth_chart">विकास चार्ट</string>
+    <string name="vaccination">टीकाकरण</string>
+    <string name="feeding_log">आहार लॉग</string>
+    <string name="milestones">उपलब्धियां</string>
+    <string name="health_records">स्वास्थ्य रिकॉर्ड</string>
+</resources>

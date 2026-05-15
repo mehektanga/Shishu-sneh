@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">ಶಿಶು-ಸ್ನೇಹ</string>
+    <string name="tagline">ನಿಮ್ಮ ಮಗುವಿನ ಡಿಜಿಟಲ್ ಗಾರ್ಡಿಯನ್ ಏಂಜೆಲ್</string>
+    <string name="get_started">ಪ್ರಾರಂಭಿಸಿ</string>
+    <string name="login_phone">ಫೋನ್ ಮೂಲಕ ಲಾಗಿನ್ ಮಾಡಿ</string>
+    <string name="send_otp">OTP ಕಳುಹಿಸಿ</string>
+    <string name="dashboard">ಡ್ಯಾಶ್‌ಬೋರ್ಡ್</string>
+    <string name="growth_chart">ಬೆಳವಣಿಗೆಯ ಚಾರ್ಟ್</string>
+    <string name="vaccination">ಲಸಿಕೆ</string>
+    <string name="feeding_log">ಆಹಾರದ ವಿವರ</string>
+    <string name="milestones">ಮೈಲಿಗಲ್ಲುಗಳು</string>
+    <string name="health_records">ಆರೋಗ್ಯ ದಾಖಲೆಗಳು</string>
+</resources>

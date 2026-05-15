@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Shishu-Sneh</string>
+    <string name="tagline">Your Baby\'s Digital Guardian Angel</string>
+    <string name="get_started">Get Started</string>
+    <string name="login_phone">Login with Phone</string>
+    <string name="send_otp">Send OTP</string>
+    <string name="dashboard">Dashboard</string>
+    <string name="growth_chart">Growth Chart</string>
+    <string name="vaccination">Vaccination</string>
+    <string name="feeding_log">Feeding Log</string>
+    <string name="milestones">Milestones</string>
+    <string name="health_records">Health Records</string>
+</resources>
