@@ -85,7 +85,7 @@ fun DashboardScreen(
                             item {
                                 SummaryCard(
                                     "Next Vaccine", 
-                                    upcomingVaccines.firstOrNull()?.name ?: "None", 
+                                    upcomingVaccines.firstOrNull()?.name ?: "None Due", 
                                     Icons.Default.Vaccines, 
                                     MaterialTheme.colorScheme.primary
                                 ) {
@@ -95,7 +95,7 @@ fun DashboardScreen(
                             item {
                                 SummaryCard(
                                     "Growth", 
-                                    "Tracked", 
+                                    if (selectedBaby?.birthWeight != 0.0) "Tracked" else "Not Set",
                                     Icons.Default.Timeline, 
                                     MaterialTheme.colorScheme.secondary
                                 ) {
@@ -213,7 +213,7 @@ fun SummaryCard(title: String, value: String, icon: ImageVector, color: Color, o
             }
             Column {
                 Text(text = title, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(text = value, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1)
+                Text(text = value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = color, maxLines = 1)
             }
         }
     }

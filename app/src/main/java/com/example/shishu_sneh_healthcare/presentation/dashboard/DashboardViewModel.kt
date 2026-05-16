@@ -5,14 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.shishu_sneh_healthcare.data.local.entity.BabyEntity
 import com.example.shishu_sneh_healthcare.data.local.entity.MedicationEntity
 import com.example.shishu_sneh_healthcare.data.local.entity.VaccineEntity
-import com.example.shishu_sneh_healthcare.data.local.entity.MilestoneEntity
 import com.example.shishu_sneh_healthcare.domain.repository.AuthRepository
-import com.example.shishu_sneh_healthcare.domain.repository.BabyRepository
 import com.example.shishu_sneh_healthcare.domain.repository.HealthRecordRepository
 import com.example.shishu_sneh_healthcare.domain.repository.VaccineRepository
 import com.example.shishu_sneh_healthcare.domain.repository.MilestoneRepository
 import com.example.shishu_sneh_healthcare.domain.use_case.GetBabiesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -35,7 +34,6 @@ class DashboardViewModel @Inject constructor(
     private val _currentTab = MutableStateFlow(0)
     val currentTab: StateFlow<Int> = _currentTab.asStateFlow()
 
-    // Dashboard Summaries
     private val _upcomingVaccines = MutableStateFlow<List<VaccineEntity>>(emptyList())
     val upcomingVaccines: StateFlow<List<VaccineEntity>> = _upcomingVaccines.asStateFlow()
 
@@ -45,6 +43,8 @@ class DashboardViewModel @Inject constructor(
     private val _milestoneProgress = MutableStateFlow(0f)
     val milestoneProgress: StateFlow<Float> = _milestoneProgress.asStateFlow()
 
+    private var dataLoadJob: Job? = null
+
     fun setCurrentTab(index: Int) {
         _currentTab.value = index
     }
@@ -52,37 +52,34 @@ class DashboardViewModel @Inject constructor(
     fun loadBabies() {
         val userId = authRepository.getCurrentUserId() ?: return
         viewModelScope.launch {
-            getBabiesUseCase(userId).collectLatest { babyList ->
+            getBabiesUseCase(userId).distinctUntilChanged().collectLatest { babyList ->
                 _babies.value = babyList
                 if (babyList.isNotEmpty() && _selectedBaby.value == null) {
                     val baby = babyList.first()
                     _selectedBaby.value = baby
-                    loadDashboardData(baby.id)
+                    startDashboardSync(baby.id)
                 }
             }
         }
     }
 
-    private fun loadDashboardData(babyId: Long) {
-        viewModelScope.launch {
-            // Load Vaccines
-            vaccineRepository.getVaccinesForBaby(babyId).collectLatest { list ->
-                _upcomingVaccines.value = list.filter { it.status != "Done" }
+    private fun startDashboardSync(babyId: Long) {
+        dataLoadJob?.cancel()
+        dataLoadJob = viewModelScope.launch {
+            // Combine local data streams into one to reduce thread switching
+            combine(
+                vaccineRepository.getVaccinesForBaby(babyId),
+                healthRecordRepository.getMedications(babyId),
+                milestoneRepository.getMilestonesForBaby(babyId)
+            ) { vaccines, meds, milestones ->
+                Triple(vaccines, meds, milestones)
+            }.collectLatest { (vaccines, meds, milestones) ->
+                _upcomingVaccines.value = vaccines.filter { it.status != "Done" }
                     .sortedBy { it.scheduledDate }
                     .take(3)
-            }
-        }
-        viewModelScope.launch {
-            // Load Medications
-            healthRecordRepository.getMedications(babyId).collectLatest { list ->
-                _activeMedications.value = list.take(3)
-            }
-        }
-        viewModelScope.launch {
-            // Load Milestones
-            milestoneRepository.getMilestonesForBaby(babyId).collectLatest { list ->
-                if (list.isNotEmpty()) {
-                    _milestoneProgress.value = list.count { it.status == "Yes" }.toFloat() / list.size
+                _activeMedications.value = meds.take(3)
+                if (milestones.isNotEmpty()) {
+                    _milestoneProgress.value = milestones.count { it.status == "Yes" }.toFloat() / milestones.size
                 }
             }
         }
@@ -90,6 +87,6 @@ class DashboardViewModel @Inject constructor(
 
     fun selectBaby(baby: BabyEntity) {
         _selectedBaby.value = baby
-        loadDashboardData(baby.id)
+        startDashboardSync(baby.id)
     }
 }

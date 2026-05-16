@@ -62,8 +62,8 @@ fun ProfileScreen(navController: NavHostController, onBackClick: () -> Unit) {
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            Text(text = "Ananya's Mom", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
-            Text(text = "Mother • Bengaluru", color = Color.Gray)
+            Text(text = "Parent Profile", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+            Text(text = "Guardian", color = Color.Gray)
             
             Spacer(modifier = Modifier.height(32.dp))
             
@@ -77,9 +77,7 @@ fun ProfileScreen(navController: NavHostController, onBackClick: () -> Unit) {
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    ProfileItem("Email", "mom@example.com")
-                    Divider(modifier = Modifier.padding(vertical = 12.dp), color = Color.LightGray.copy(alpha = 0.3f))
-                    ProfileItem("Phone", "+91 9876543210")
+                    ProfileItem("User ID", "Logged In")
                 }
             }
         }
@@ -89,9 +87,9 @@ fun ProfileScreen(navController: NavHostController, onBackClick: () -> Unit) {
 @Composable
 fun ProfileStatRow() {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-        StatItem("4", "Vaccines")
-        StatItem("12", "Weeks")
-        StatItem("8", "Milestones")
+        StatItem("-", "Vaccines")
+        StatItem("-", "Growth")
+        StatItem("-", "Milestones")
     }
 }
 
